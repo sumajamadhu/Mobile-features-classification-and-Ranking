@@ -1,0 +1,685 @@
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+import plotly.express as pe
+
+Read data into python
+
+data1=pd.read_csv('/content/MobileTest.csv')
+data2=pd.read_csv('/content/MobileTrain.csv')
+
+data1.isnull().sum()
+
+data2.isnull().sum()
+
+Merge into one data set
+
+data1.head(5)
+
+data2.head(5)
+
+df = pd.concat([data2.assign(ind="train"), data1.assign(ind="test")])
+
+df.head(5)
+
+df.dtypes
+
+df.shape
+
+Data Cleaning and Sanitizing
+
+Checking for null values
+
+df=df.drop('id',axis=1)
+
+df.isnull().sum()
+
+Though price range has 1000 missing values,we cannot handle that because it is our target and it happened due to the merging of datasets.Hence we will leave that column as it is.
+
+df.isnull().sum()
+
+df.describe()
+
+Outlier detection and Removal
+
+import numpy as np
+from collections import Counter
+
+# list to store outlier indices
+outlier_indices = []
+    # detect outliers from list of features
+features =['battery_power', 'clock_speed', 'dual_sim', 'fc', 'four_g',
+      'int_memory', 'm_dep', 'mobile_wt', 'n_cores', 'pc', 'px_height',
+      'px_width', 'ram', 'sc_h', 'sc_w', 'talk_time', 'three_g',
+      'touch_screen', 'wifi']
+       # iterate over features(columns)
+for col in features:
+        # Get the 1st quartile (25%)
+        Q1 = np.percentile(df[col], 25)
+        # Get the 3rd quartile (75%)
+        Q3 = np.percentile(df[col], 75)
+        # Get the Interquartile range (IQR)
+        IQR = Q3 - Q1
+        # Define our outlier step
+        outlier_step = 1.5 * IQR
+       # Determine a list of indices of outliers
+        outlier_list_col = df[(df[col] < Q1 - outlier_step) | (df[col] > Q3 + outlier_step)].index
+                             
+   # append outlier indices for column to the list of outlier indices 
+        outlier_indices.extend(outlier_list_col)
+   # select observations containing more than 2 outliers
+outlier_indices = Counter(outlier_indices)        
+multiple_outliers = list(k for k, v in outlier_indices.items() if v > 2)
+   
+
+
+multiple_outliers
+
+for i in multiple_outliers:
+  df.drop(i)
+
+
+df.columns
+
+
+plt.figure(figsize=(9,6))
+plt.boxplot(df['fc'])
+plt.title('Boxplot of fc')
+plt.xlabel("front camera",fontsize=20 )
+plt.yticks(fontsize=15)
+plt.show()
+
+Q1=np.percentile(df['fc'],25,interpolation='midpoint')
+Q2=np.percentile(df['fc'],50,interpolation='midpoint')
+Q3=np.percentile(df['fc'],75,interpolation='midpoint')
+IQR=Q3-Q1
+low_lim=Q1-1.5*IQR
+up_lim=Q3+1.5*IQR
+
+outlier=[]
+for x in df['fc']:
+    if((x>up_lim) or (x<low_lim)):
+        outlier.append(x)
+
+ind1=df['fc']>up_lim
+
+for i in df.loc[ind1].index:
+  df.drop(i,inplace=True)
+
+plt.figure(figsize=(9,6))
+plt.boxplot(df['px_height'])
+plt.title('Boxplot of px_heigh')
+plt.xlabel("px_heigh",fontsize=20 )
+plt.yticks(fontsize=15)
+plt.show()
+
+
+Q1=np.percentile(df['px_height'],25,interpolation='midpoint')
+Q2=np.percentile(df['px_height'],50,interpolation='midpoint')
+Q3=np.percentile(df['px_height'],75,interpolation='midpoint')
+IQR=Q3-Q1
+low_lim=Q1-1.5*IQR
+up_lim=Q3+1.5*IQR
+
+outlier=[]
+for x in df['px_height']:
+    if((x>up_lim) or (x<low_lim)):
+        outlier.append(x)
+
+ind1=df['px_height']>up_lim
+
+
+
+for i in df.loc[ind1].index:
+  df.drop(i,inplace=True)
+
+plt.figure(figsize=(9,6))
+plt.boxplot(df['three_g'])
+plt.title('Boxplot of three_g')
+plt.xlabel("three_g",fontsize=20 )
+plt.yticks(fontsize=15)
+plt.show()
+
+Q1=np.percentile(df['three_g'],25,interpolation='midpoint')
+Q2=np.percentile(df['three_g'],50,interpolation='midpoint')
+Q3=np.percentile(df['three_g'],75,interpolation='midpoint')
+IQR=Q3-Q1
+low_lim=Q1-1.5*IQR
+up_lim=Q3+1.5*IQR
+
+outlier=[]
+for x in df['three_g']:
+    if((x>up_lim) or (x<low_lim)):
+        outlier.append(x)
+
+ind1=df['three_g']>up_lim
+
+ind1
+
+for i in df.loc[ind1].index:
+  df.drop(i,inplace=True)
+
+plt.figure(figsize=(9,6))
+plt.boxplot(df['wifi'])
+plt.title('Boxplot of wifi')
+plt.xlabel("wifi",fontsize=20 )
+plt.yticks(fontsize=15)
+plt.show()
+
+DESCRIPTIVE STATICS
+
+round(df.describe(),1).T
+
+Finding Correlation
+
+df.corr()
+
+cor=df.corr()
+plt.figure(figsize=(15,15))
+sns.heatmap(cor,annot= True,vmin=-.9,vmax=.9,linewidths=.2,linecolor='white')
+plt.show()
+
+Splitting Dataset Based on software and hardware requiremnts.
+
+df.columns
+
+HW=df.loc[:,['battery_power','dual_sim','fc','m_dep','int_memory','mobile_wt','n_cores','pc','ram','sc_h','sc_w','touch_screen']]
+
+HW=pd.DataFrame(HW)
+
+HW['REQ_TYPE']=1
+
+HW.head(3)
+
+SW=df.loc[:,['blue', 'clock_speed','four_g','px_height','px_width','talk_time', 'three_g','wifi']]
+
+SW=pd.DataFrame(SW)
+
+SW['REQ_TYPE']=0
+
+SW.head(3)
+
+split into train and test dataset
+
+test,train=df[df['ind'].eq("test")],df[df['ind'].eq("train")]
+
+test=test.drop('ind',axis=1)
+train=train.drop('ind',axis=1)
+
+Exploratory data Analysis
+
+Univariate analysis
+
+plt.figure(figsize=(12,7))
+plt.title('Count of price range',fontsize=20)
+sns.set_style('whitegrid')
+sns.countplot(x='price_range',data=train)
+plt.xlabel('Target',fontsize=15)
+plt.xlabel('Count',fontsize=15)
+plt.xticks(fontsize=15)
+plt.yticks(fontsize=15)
+plt.show()
+
+Bivariate Analysis
+
+plt.figure(figsize=(20,10))
+plt.title('Price range vs clock speed',fontsize=20)
+sns.barplot(x='clock_speed',y='price_range',data=train)
+plt.xlabel('Clock speed',fontsize=20)
+plt.ylabel('price_range',fontsize=20)
+plt.xticks(fontsize=15)
+plt.yticks(fontsize=15)
+plt.show()
+
+train.columns
+
+Multivariate Analysis
+
+plt.figure(figsize=(20,10))
+slice_data=train[['battery_power', 'blue', 'clock_speed', 'dual_sim', 'fc', 'four_g',
+       'int_memory', 'm_dep', 'mobile_wt', 'n_cores', 'pc', 'px_height',
+       'px_width', 'ram', 'sc_h', 'sc_w', 'talk_time', 'three_g',
+       'touch_screen', 'wifi', 'price_range']]
+sns.pairplot(slice_data)
+plt.show()
+
+Count plot for all numeric features
+
+fig, axes = plt.subplots(2, 3, figsize=(18, 10))
+fig.suptitle('Count plot all numerical factor')
+sns.countplot(ax=axes[0, 0], data=train, x='three_g',palette='RdPu')
+sns.countplot(ax=axes[0, 1], data=train, x='touch_screen',palette='RdPu')
+sns.countplot(ax=axes[0, 2], data=train, x='four_g',palette='RdPu')
+sns.countplot(ax=axes[1, 0], data=train, x='wifi',palette='RdPu')
+sns.countplot(ax=axes[1,1],data = train, x ='fc' ,palette='RdPu')
+sns.countplot(ax=axes[1,2],data = train, x ='dual_sim',palette='RdPu' )
+plt.show()
+
+Different classes of price range
+
+classification=train['price_range'].value_counts()
+cls_label=['0(low cost)', '1(medium cost)', '2(high cost)','3(very high cost)']
+class_label={}
+leg_labels=['0(low cost)', '1(medium cost)', '2(high cost)','3(very high cost)']
+label=train['price_range']
+for i in label:
+  if i not in class_label:
+    class_label[i]=1
+  else:
+    class_label[i]+=1
+print (class_label)
+fig = plt.figure(figsize =(10, 7))
+plt.pie(classification,labels=cls_label, startangle=90,colors=['green','blue','yellow','red'], shadow=True,explode=(0.1, 0.1,0.1,0.1), autopct='%1.2f%%')
+plt.legend(leg_labels, loc ="lower right")
+plt.tight_layout()
+plt.savefig("Target_Pie.jpg")
+plt.show()
+
+From majority class to minority class nearly equally distributed.So our dataset is a balanced dataset.
+
+1. *Classification Based on sofftware and hardware **requirement**
+
+split harware and software data set into x and y
+
+x=SW.iloc[0:2933,0:7].values
+x=np.append(x, HW.iloc[0:2933,0:7].values, axis=0)
+x
+
+x.shape
+
+y=SW.iloc[0:2933,8].values
+y=np.append(y, HW.iloc[0:2933,12].values,axis=0)
+
+y.shape
+
+Split into xtrain Ytrain xtest ytest
+
+from sklearn.model_selection import train_test_split
+x_train,x_test,y_train,y_test=train_test_split(x,y,random_state=42,test_size=.2)
+
+scaling
+
+from sklearn.preprocessing import StandardScaler
+scaler=StandardScaler()
+x_train=scaler.fit_transform(x_train)
+x_test=scaler.fit_transform(x_test)
+
+Logistic regression
+
+from sklearn.linear_model import LogisticRegression
+log_model=LogisticRegression()
+log_model.fit(x_train,y_train)
+y_pred=log_model.predict(x_test)
+
+from sklearn.metrics import confusion_matrix,accuracy_score,precision_score,recall_score,f1_score
+
+print('Accuracy is',accuracy_score(y_test,y_pred))
+print('Pecesion score',precision_score(y_test,y_pred,average='macro'))
+print('Recall score',recall_score(y_test,y_pred,average='macro'))
+print(' f1 score',f1_score(y_test,y_pred,average='macro'))
+
+SVC Linear model
+
+from sklearn.svm import SVC
+svm_linear=SVC(kernel='linear')
+a25=svm_linear.fit(x_train,y_train)
+ypred5=a25.predict(x_test)
+
+print('Accuracy is',accuracy_score(y_test,y_pred))
+print('Pecesion score',precision_score(y_test,y_pred,average='macro'))
+print('Recall score',recall_score(y_test,y_pred,average='macro'))
+print(' f1 score',f1_score(y_test,y_pred,average='macro'))
+
+ypred5
+
+Decision Tree
+
+from sklearn.tree import DecisionTreeClassifier
+dt=DecisionTreeClassifier()
+model=dt.fit(x_train,y_train)
+ypred8=model.predict(x_test)
+
+print('Accuracy score is: ', accuracy_score(y_test,ypred8).round(2))
+print('Precision is : ',precision_score(y_test,ypred8, average='micro').round(2))
+print('recall_score is  : ',recall_score(y_test,ypred8,average='macro').round(2))
+print('f1 score is  : ',f1_score(y_test,ypred8,average='micro').round(2))
+
+ypred8
+
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+
+kfold = KFold(n_splits = 10)
+xyz = []
+accuracy = []
+
+classifiers=["SVM","Logistic Regression","Decision Tree"]
+models=[SVC(kernel='linear'),LogisticRegression(),DecisionTreeClassifier()]
+
+for i in models:
+    model = i
+    cv_result=cross_val_score(model,x_train,y_train,cv=kfold,scoring="accuracy")
+    cv_result = cv_result
+    xyz.append(cv_result.mean())
+    accuracy.append(cv_result)
+    
+cv_models_datafeame= pd.DataFrame(xyz, index = classifiers)
+cv_models_datafeame.columns = ['CV Mean']
+cv_models_datafeame
+cv_models_datafeame.sort_values(['CV Mean'], ascending =[0])
+
+box = pd.DataFrame(accuracy, index = [classifiers])
+boxT = box.T
+plt.figure(figsize = (10,7))
+ax = sns.boxplot(data = boxT, orient = "h", palette = "Set2", width = 0.8)
+ax.set_yticklabels(classifiers)
+ax.set_title('Cross Validation accuracy with different classifiers')
+ax.set_xlabel('Accuracy')
+
+plt.show()
+
+
+**Here I have Classified the datsets into Software and HardWare Requirements.All the models accuracy is 1. Here I have used logistic regression,Decision tree,Svm linear.**
+
+**# Classification based on price range**
+
+Building model from Train data
+
+Y=train['price_range']
+X=train.drop('price_range',axis=1)
+
+from sklearn.model_selection import train_test_split
+x_train,x_test,y_train,y_test=train_test_split(X,Y,random_state=42,test_size=.2)
+
+Y.head(2)
+
+X.head(3)
+
+Scaling
+
+from sklearn.preprocessing import StandardScaler
+scaler=StandardScaler()
+x_train=scaler.fit_transform(x_train)
+x_test=scaler.fit_transform(x_test)
+
+Logistic Regression
+
+from sklearn.linear_model import LogisticRegression
+log_model=LogisticRegression()
+log_model.fit(x_train,y_train)
+y_pred=log_model.predict(x_test)
+
+y_pred
+
+from sklearn.metrics import confusion_matrix,accuracy_score,precision_score,recall_score,f1_score
+
+print('Accuracy is',accuracy_score(y_test,y_pred))
+print('Pecesion score',precision_score(y_test,y_pred,average='macro'))
+print('Recall score',recall_score(y_test,y_pred,average='macro'))
+print(' f1 score',f1_score(y_test,y_pred,average='macro'))
+
+
+logac=accuracy_score(y_test,y_pred)
+
+Gaussina NB
+
+from sklearn.naive_bayes import GaussianNB
+bayne=GaussianNB()
+bayne.fit(x_train,y_train)
+ypred1=bayne.predict(x_test)
+
+from sklearn.metrics import confusion_matrix,accuracy_score,precision_score,recall_score,f1_score
+from sklearn.metrics import classification_report
+
+print('Accuracy is : ',accuracy_score(y_test,ypred1).round(2))
+print('Precision is : ',precision_score(y_test,ypred1,average='macro').round(2))
+print('recall_score is  : ',recall_score(y_test,ypred1,average='macro').round(2))
+print('f1 score is  : ',f1_score(y_test,ypred1,average='macro'))
+
+gsnac=accuracy_score(y_test,ypred1).round(2)
+
+SVM
+
+SVM Linear
+
+from sklearn.svm import SVC
+svm_linear=SVC(kernel='linear')
+a25=svm_linear.fit(x_train,y_train)
+ypred5=a25.predict(x_test)
+
+print('Accuracy is : ',accuracy_score(y_test,ypred5).round(2))
+print('Precision is : ',precision_score(y_test,ypred5,average='macro').round(2))
+print('recall_score is  : ',recall_score(y_test,ypred5,average='macro').round(2))
+print('f1 score is  : ',f1_score(y_test,ypred5,average='macro').round(2))
+
+svml=accuracy_score(y_test,ypred5).round(2)
+
+SVM POlynomial
+
+svm_polynomial=SVC(kernel='poly',degree=3)
+model=svm_polynomial.fit(x_train,y_train)
+ypred6=model.predict(x_test)
+
+print('Accuracy is : ',accuracy_score(y_test,ypred5).round(2))
+print('Precision is : ',precision_score(y_test,ypred5,average='macro').round(2))
+print('recall_score is  : ',recall_score(y_test,ypred5,average='macro').round(2))
+print('f1 score is  : ',f1_score(y_test,ypred5,average='macro').round(2))
+
+svmpac=accuracy_score(y_test,ypred5).round(2)
+
+SVM rbf
+
+svm_radial=SVC(kernel='rbf',probability=True)
+svm_radial.fit(x_train,y_train)
+ypred7=svm_radial.predict(x_test)
+
+print('Accuracy score is: ', accuracy_score(y_test,ypred7).round(2))
+print('Precision is : ',precision_score(y_test,ypred7, average='micro').round(2))
+print('recall_score is  : ',recall_score(y_test,ypred7,average='macro').round(2))
+print('f1 score is  : ',f1_score(y_test,ypred7,average='micro').round(2))
+
+svmrb=accuracy_score(y_test,ypred7).round(2)
+
+Decision Tree
+
+from sklearn.tree import DecisionTreeClassifier
+dt=DecisionTreeClassifier()
+model=dt.fit(x_train,y_train)
+ypred8=model.predict(x_test)
+
+print('Accuracy score is: ', accuracy_score(y_test,ypred7).round(2))
+print('Precision is : ',precision_score(y_test,ypred7, average='micro').round(2))
+print('recall_score is  : ',recall_score(y_test,ypred7,average='macro').round(2))
+print('f1 score is  : ',f1_score(y_test,ypred7,average='micro').round(2))
+
+dtac=accuracy_score(y_test,ypred7).round(2)
+
+Hyper tunned paramarmetrs of Descision tree
+
+dt2=DecisionTreeClassifier(criterion='entropy' , random_state=42)
+model1=dt2.fit(x_train,y_train)
+ypred9=model1.predict(x_test)
+
+print('Accuracy score is: ', accuracy_score(y_test,ypred7).round(2))
+print('Precision is : ',precision_score(y_test,ypred7, average='micro').round(2))
+print('recall_score is  : ',recall_score(y_test,ypred7,average='macro').round(2))
+print('f1 score is  : ',f1_score(y_test,ypred7,average='micro').round(2))
+
+htpac=accuracy_score(y_test,ypred7).round(2)
+
+Random Forest
+
+from sklearn.ensemble import RandomForestClassifier
+rf=RandomForestClassifier()
+rf.fit(x_train,y_train)
+ypred10=rf.predict(x_test)
+
+print('Accuracy score is: ', accuracy_score(y_test,ypred7).round(2))
+print('Precision is : ',precision_score(y_test,ypred7, average='micro').round(2))
+print('recall_score is  : ',recall_score(y_test,ypred7,average='macro').round(2))
+print('f1 score is  : ',f1_score(y_test,ypred7,average='micro').round(2))
+
+rfac=accuracy_score(y_test,ypred7).round(2)
+
+Hyper parameter tuning Random Forest
+
+rf1=RandomForestClassifier(criterion='entropy',random_state=42)
+rf1.fit(x_train,y_train)
+ypred11=rf.predict(x_test)
+
+print('Accuracy score is: ', accuracy_score(y_test,ypred7).round(2))
+print('Precision is : ',precision_score(y_test,ypred7, average='micro').round(2))
+print('recall_score is  : ',recall_score(y_test,ypred7,average='macro').round(2))
+print('f1 score is  : ',f1_score(y_test,ypred7,average='micro').round(2))
+
+hprfac=accuracy_score(y_test,ypred7).round(2)
+
+Feature importance
+
+f1=pd.Series(rf.feature_importances_,index=X.columns).sort_values(ascending=False)*100
+f1.round(2)
+
+f1=pd.Series(rf1.feature_importances_,index=X.columns).sort_values(ascending=False)*100
+f1.round(2)
+
+f1.plot.bar()
+
+plt.show()
+
+Gradient Boosting
+
+from sklearn.ensemble import GradientBoostingClassifier
+gb=GradientBoostingClassifier()
+gb.fit(x_train,y_train)
+
+print('Accuracy score is: ', accuracy_score(y_test,ypred7).round(2))
+print('Precision is : ',precision_score(y_test,ypred7, average='micro').round(2))
+print('recall_score is  : ',recall_score(y_test,ypred7,average='macro').round(2))
+print('f1 score is  : ',f1_score(y_test,ypred7,average='micro').round(2))
+
+gbac=accuracy_score(y_test,ypred7).round(2)
+
+#Classifiers
+classifiers=["LogisticRegression","GaussianNB","SVM","DecisionTreeClassifier","RandomForestClassifier"]
+accuracy_=[logac,gsnac,svml,dtac,rfac]
+df_ac=pd.DataFrame({'model':classifiers,"accuracy":accuracy_})
+pe.histogram(data_frame=df_ac,x="model",y="accuracy")
+
+Conclusion:I have selected SVM Linear as My model to work as back end of the website Application as it has least amount of misclassified records and accuraci is 92%.
+
+**Cross validation with k fold**
+
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+
+kfold = KFold(n_splits = 10)
+xyz = []
+accuracy = []
+
+classifiers=["SVM","Logistic Regression","Decision Tree","Random Forest","GaussianNB"]
+models=[SVC(kernel='linear'),LogisticRegression(),DecisionTreeClassifier(),RandomForestClassifier(n_estimators=300,random_state=0),GaussianNB()]
+
+for i in models:
+    model = i
+    cv_result=cross_val_score(model,x_train,y_train,cv=kfold,scoring="accuracy")
+    cv_result = cv_result
+    xyz.append(cv_result.mean())
+    accuracy.append(cv_result)
+    
+cv_models_datafeame= pd.DataFrame(xyz, index = classifiers)
+cv_models_datafeame.columns = ['CV Mean']
+cv_models_datafeame
+cv_models_datafeame.sort_values(['CV Mean'], ascending =[0])
+
+box = pd.DataFrame(accuracy, index = [classifiers])
+boxT = box.T
+plt.figure(figsize = (10,7))
+ax = sns.boxplot(data = boxT, orient = "h", palette = "Set2", width = 0.8)
+ax.set_yticklabels(classifiers)
+ax.set_title('Cross Validation accuracy with different classifiers')
+ax.set_xlabel('Accuracy')
+
+plt.show()
+
+
+After K fold Cross validation I  have decided to move forward with the SVM linear model.
+
+Predicting price _range of Test data frame using SVM linear model
+
+touch_screen      0.67
+four_g            0.64
+wifi              0.62
+dual_sim          0.62
+blue              0.61
+three_g           0.53 Since These features has less feature importance. So I am going to remove these features for model creation.
+
+Y=train['price_range']
+X=train.drop(['price_range','touch_screen','four_g','wifi','dual_sim','blue','three_g','m_dep','n_cores','pc'],axis=1)
+
+
+
+
+from sklearn.model_selection import train_test_split
+x_train,x_test,y_train,y_test=train_test_split(X,Y,random_state=42,test_size=.2)
+
+from sklearn.ensemble import RandomForestClassifier
+rf=RandomForestClassifier()
+rf.fit(x_train,y_train)
+ypred10=rf.predict(x_test)
+
+x_test
+
+print('Accuracy score is: ', accuracy_score(y_test,ypred7).round(2))
+print('Precision is : ',precision_score(y_test,ypred7, average='micro').round(2))
+print('recall_score is  : ',recall_score(y_test,ypred7,average='macro').round(2))
+print('f1 score is  : ',f1_score(y_test,ypred7,average='micro').round(2))
+
+ypred10
+
+test.head(3)
+
+Merging Software and Hardware requirement dataset
+
+d=pd.concat([SW.reset_index(drop=True), HW.reset_index(drop=True)], axis=1)
+
+d.head(3)
+
+Ranking every feature in the merged dataset.
+
+
+r = df
+r["rank_by_battery"] = r["battery_power"].rank(ascending=False,axis=0,method='dense')
+r["rank_by_blueooth"] = r["blue"].rank(ascending=False,axis=0,method='dense')
+r["rank_by_clockspeed"] = r["clock_speed"].rank(ascending=False,axis=0,method='dense')
+r["rank_by_DualSIM"] = r["dual_sim"].rank(ascending=False,axis=0,method='dense')
+r["rank_by_fc"] = r["fc"].rank(ascending=False,axis=0,method='dense')
+r["rank_by_4G"] = r["four_g"].rank(ascending=False)
+r["rank_by_InternalMemory"] = r["int_memory"].rank(ascending=False,axis=0,method='dense')
+r["rank_by_mdep"] = r["m_dep"].rank(ascending=False,axis=0,method='dense')
+r["rank_by_weight"] = r["mobile_wt"].rank(ascending=False,axis=0,method='dense')
+r["rank_by_ncores"] = r["n_cores"].rank(ascending=False,axis=0,method='dense')
+r["rank_by_pc"] = r["pc"].rank(ascending=False,axis=0,method='dense')
+r["rank_by_height"] = r["px_height"].rank(ascending=False,axis=0,method='dense')
+r["rank_by_width"] = r["px_width"].rank(ascending=False,axis=0,method='dense')
+r["rank_by_ram"] = r["ram"].rank(ascending=False,axis=0,method='dense')
+r["rank_by_sch"] = r["sc_h"].rank(ascending=False,axis=0,method='dense')
+r["rank_by_scw"] = r["sc_w"].rank(ascending=False,axis=0,method='dense')
+r["rank_by_talktime"] = r["talk_time"].rank(ascending=False,axis=0,method='dense')
+r["rank_by_3G"] = r["three_g"].rank(ascending=False,axis=0,method='dense')
+r["rank_by_touchscreen"] = r["touch_screen"].rank(ascending=False)
+r["rank_by_wifi"] = r["wifi"].rank(ascending=False,axis=0,method="dense")
+r['rank_by_price']=r['price_range'].rank(ascending=False,axis=0,method="dense")
+r.head()
+
+RankedDataset =r.iloc[:,21:]
+RankedDataset
+
+Ranking by price range
+
+df["rank_by_price"] = df["price_range"].rank()
+dt1 = df
+dt1.head()
+
+price=df[['price_range','rank_by_price']]
+price.drop_duplicates('price_range')
