@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Mobile Requirements</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body background="/static/images/bk1.jpg" style="max-width: 80%; background-size: cover;  background-repeat:no-repeat;>
+<!-- Input Form -->
+<div  class="input form">
+  <form action="{{url_for('predict')}}"method="post" id="input head">
+    <h1 style="color: yellow;" id="heading">Mobile Requirements Form</h1>
+    <h3 style="color: yellow;"  id="input">Enter User ID</h3>
+    <input type="text" name="UID" placeholder="UID">
+    <h4 style="color: yellow;" id="input">Enter Hardware Requiremnts</h4>
+    <input type="text" name="RM" placeholder="RAM"&nbsp&nbsp&nbsp>
+    <input type="text" name="CM" placeholder="Camera"&nbsp&nbsp&nbsp>
+    <input type="text" name="BP" placeholder="Battery Power"&nbsp&nbsp&nbsp>
+    <input type="text" name="MT" placeholder="Mobile Weight">
+    <br>&nbsp&nbsp&nbsp
+    <input type="text" name="SW" placeholder="Screen width"&nbsp&nbsp&nbsp>
+    <input type="text" name="SH" placeholder="Screen hight"&nbsp&nbsp&nbsp>
+    <input type="text" name="IM" placeholder="Interanl memory"&nbsp&nbsp&nbsp>
+    <br>
+    <h4 style="color: yellow;" id="input">Enter Software Requiremnts</h4>
+    <input type="text" name="CS" placeholder="Clockspeed"&nbsp&nbsp&nbsp>
+    <input type="text" name="TT" placeholder="Talk Time"&nbsp&nbsp&nbsp>
+    <input type="text" name="PW" placeholder="Pixel width"&nbsp&nbsp&nbsp>
+    <input type="text" name="PH" placeholder="Pixel Hight"&nbsp&nbsp&nbsp>
+    <br>
+    <button id="submit" type="submit">Submit</button>
+  </form>
+ 
+</div>
+   
+</body>
+</html>
